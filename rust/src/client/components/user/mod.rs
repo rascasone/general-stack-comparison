@@ -1,0 +1,10 @@
+mod add_view;
+pub use add_view::*;
+mod detail_view;
+pub use detail_view::*;
+mod edit_view;
+pub use edit_view::*;
+mod list_view;
+pub use list_view::*;
+mod table;
+pub use table::*;

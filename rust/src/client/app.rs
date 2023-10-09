@@ -1,29 +1,28 @@
-use crate::client::components::error::{AppError, ErrorList};
-use crate::client::pages::user::UserListPage;
+use crate::client::components::{AppError, ErrorList};
+use crate::client::pages::user::UserPage;
 use leptos::*;
-use leptos_meta::*;
-use leptos_router::*;
+use leptos_meta::{provide_meta_context, Link, Stylesheet};
+use leptos_router::{Route, Router, Routes};
 
 #[component]
-pub fn App(cx: Scope) -> impl IntoView {
-    provide_meta_context(cx);
+pub fn App() -> impl IntoView {
+    provide_meta_context();
 
     view! {
-        cx,
         <Stylesheet id="leptos" href="/pkg/rust.css"/>
         <Link rel="shortcut icon" type_="image/ico" href="/favicon.ico"/>
 
-        <Router fallback=|cx| {
+        <Router fallback=|| {
             let mut outside_errors = Errors::default();
             outside_errors.insert_with_default_key(AppError::NotFound);
-            view! { cx,
+            view! {
                 <ErrorList outside_errors/>
             }
-            .into_view(cx)
+            .into_view()
         }>
-            <main>
+            <main class="flex flex-col w-[1000px] mx-auto my-0 py-32">
                 <Routes>
-                    <Route path="" view=|cx| view! { cx, <UserListPage/> }/>
+                    <Route path="" view=|| view! {  <UserPage/> }/>
                 </Routes>
             </main>
         </Router>
