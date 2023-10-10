@@ -1,49 +1,77 @@
-use crate::client::components::Input as InputComponent;
+use crate::client::components::field::{Checkbox, Date, Input};
 use crate::client::components::Spacer;
 use leptos::*;
 
-pub struct Input {
-    pub kind: &'static str,
-    pub required: bool,
-    pub label: &'static str,
-    pub value: RwSignal<String>,
+pub enum Field {
+    Input(&'static str, Props),
+    Checkbox(Props),
+    Date((u32, u32), Props),
 }
 
-impl Input {
-    pub fn text(label: &'static str, value: RwSignal<String>) -> Self {
+#[derive(Clone)]
+pub struct Props {
+    pub label: &'static str,
+    pub value: RwSignal<String>,
+    pub checks: Vec<fn(&str) -> Option<String>>,
+}
+
+impl Default for Props {
+    fn default() -> Self {
         Self {
-            kind: "text",
-            required: false,
-            label,
-            value,
+            label: "",
+            value: RwSignal::new(String::default()),
+            checks: vec![],
         }
     }
-    pub fn email(label: &'static str, value: RwSignal<String>) -> Self {
-        Self {
-            kind: "email",
-            required: true,
-            label,
-            value,
+}
+
+pub struct Check {}
+
+impl Check {
+    pub fn required(v: &str) -> Option<String> {
+        if v.is_empty() {
+            Some("This field is required".to_owned())
+        } else {
+            None
+        }
+    }
+
+    pub fn email(v: &str) -> Option<String> {
+        if !v.contains('@') {
+            Some("Invalid email format".to_owned())
+        } else {
+            None
+        }
+    }
+
+    pub fn word(v: &str) -> Option<String> {
+        if v.contains(' ') {
+            Some("Should be a single word".to_owned())
+        } else {
+            None
         }
     }
 }
 
 #[component]
-pub fn Form(inputs: Vec<Input>, error_counter: RwSignal<usize>) -> impl IntoView {
-    let check_trigger = create_trigger();
-    let input_length = inputs.len() - 1;
+pub fn Form(fields: Vec<Field>, error_counter: RwSignal<usize>) -> impl IntoView {
+    let input_length = fields.len() - 1;
 
     view! {
         <form>
-            {inputs.iter().enumerate().map(|(i, input)| view! {
-                <InputComponent
-                    label=input.label
-                    kind=input.kind
-                    required=input.required
-                    value=input.value
-                    error_counter=error_counter
-                    check_trigger=check_trigger
-                />
+            {fields.iter().enumerate().map(|(i, field)| view! {
+                {match field {
+                    Field::Input(kind, props) => view! {
+                        <Input
+                            props=props.clone()
+                            kind=kind
+                            error_counter=error_counter
+                        />
+                    },
+                    Field::Checkbox(_) => view! { <Checkbox /> },
+                    Field::Date(_, _) => view! { <Date /> },
+                }}
+
                 <Show when=move || i != input_length>
                     <Spacer />
                 </Show>

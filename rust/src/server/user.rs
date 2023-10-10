@@ -15,7 +15,7 @@ pub async fn get_users() -> Result<Vec<QueryableUser>, ServerFnError> {
         .load(connection)
         .expect("Error loading users");
 
-    sleep(std::time::Duration::from_secs(1)).await;
+    sleep(std::time::Duration::from_millis(250)).await;
 
     Ok(results)
 }
