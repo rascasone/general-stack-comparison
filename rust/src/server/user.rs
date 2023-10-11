@@ -1,21 +1,19 @@
 use leptos::{server, ServerFnError};
 
-use crate::models::{ChangesetUser, NewUserProps, QueryableUser};
+use crate::models::{NewUserProps, QueryableUser, UpdateUser};
 
 #[server(ServerGetUsers, "/api", "Cbor")]
 pub async fn get_users() -> Result<Vec<QueryableUser>, ServerFnError> {
     use crate::database::establish_connection;
     use crate::schema::users::dsl::*;
     use diesel::prelude::*;
-    use tokio::time::sleep;
 
     let connection = &mut establish_connection();
     let results = users
         .select(QueryableUser::as_select())
+        .order_by(created_at.desc())
         .load(connection)
         .expect("Error loading users");
-
-    sleep(std::time::Duration::from_millis(250)).await;
 
     Ok(results)
 }
@@ -49,13 +47,12 @@ pub async fn create_user(user: NewUserProps) -> Result<String, ServerFnError> {
             last_name: string_to_option(user.last_name),
             gender: string_to_option(user.gender),
             education: string_to_option(user.education),
-            // birth_date: match user.birth_date.is_empty() {
-            //     true => None,
-            //     false => {
-            //         Some(chrono::NaiveDate::parse_from_str(&user.birth_date, "%Y-%m-%d").unwrap())
-            //     }
-            // },
-            birth_date: Some(Local::now().date_naive()),
+            birth_date: match user.birth_date.is_empty() {
+                true => None,
+                false => {
+                    Some(chrono::NaiveDate::parse_from_str(&user.birth_date, "%Y-%m-%d").unwrap())
+                }
+            },
             valid: Some(false),
             created_at: Local::now().date_naive(),
             updated_at: Local::now().date_naive(),
@@ -67,8 +64,9 @@ pub async fn create_user(user: NewUserProps) -> Result<String, ServerFnError> {
 }
 
 #[server(ServerUpdateUser, "/api", "Cbor")]
-pub async fn update_user(user_id: String, user: ChangesetUser) -> Result<(), ServerFnError> {
+pub async fn update_user(user_id: String, user: UpdateUser) -> Result<(), ServerFnError> {
     use crate::database::establish_connection;
+    use crate::models::ChangesetUser;
     use crate::schema::users::dsl::*;
     use diesel::prelude::*;
     use diesel::update;
@@ -77,7 +75,17 @@ pub async fn update_user(user_id: String, user: ChangesetUser) -> Result<(), Ser
 
     update(users)
         .filter(id.eq(user_id))
-        .set(user)
+        .set(ChangesetUser {
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            gender: user.gender,
+            education: user.education,
+            birth_date: user
+                .birth_date
+                .map(|v| chrono::NaiveDate::parse_from_str(&v, "%Y-%m-%d").unwrap()),
+            valid: user.valid.map(|v| v.parse::<bool>().unwrap()),
+        })
         .execute(connection)
         .expect("Error updating a user");
 

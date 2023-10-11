@@ -1,6 +1,7 @@
+use leptos::*;
+
 use crate::client::components::field::{Checkbox, Date, Input};
 use crate::client::components::Spacer;
-use leptos::*;
 
 pub enum Field {
     Input(&'static str, Props),
@@ -58,7 +59,7 @@ pub fn Form(fields: Vec<Field>, error_counter: RwSignal<usize>) -> impl IntoView
     let input_length = fields.len() - 1;
 
     view! {
-        <form>
+        <div>
             {fields.iter().enumerate().map(|(i, field)| view! {
                 {match field {
                     Field::Input(kind, props) => view! {
@@ -68,14 +69,25 @@ pub fn Form(fields: Vec<Field>, error_counter: RwSignal<usize>) -> impl IntoView
                             error_counter=error_counter
                         />
                     },
-                    Field::Checkbox(_) => view! { <Checkbox /> },
-                    Field::Date(_, _) => view! { <Date /> },
+                    Field::Checkbox(props) => view! {
+                        <Checkbox
+                            props=props.clone()
+                            error_counter=error_counter
+                        />
+                    },
+                    Field::Date(range, props) => view! {
+                        <Date
+                            range=*range
+                            props=props.clone()
+                            error_counter=error_counter
+                        />
+                    },
                 }}
 
                 <Show when=move || i != input_length>
                     <Spacer />
                 </Show>
             }).collect_view()}
-        </form>
+        </div>
     }
 }

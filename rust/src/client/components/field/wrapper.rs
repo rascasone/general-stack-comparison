@@ -1,4 +1,3 @@
-use leptos::logging::log;
 use leptos::*;
 
 use crate::client::components::Check;
@@ -7,7 +6,6 @@ pub struct UseField {
     pub value: RwSignal<String>,
     pub required: bool,
     pub error: RwSignal<Option<String>>,
-    pub on_change: Box<dyn Fn(String)>,
 }
 
 pub fn use_field(
@@ -26,7 +24,7 @@ pub fn use_field(
 
             if check_error.is_some() {
                 if error.get_untracked().is_none() {
-                    error_counter.update(|v| *v = *v + 1);
+                    error_counter.update(|v| *v += 1);
                 }
 
                 error.set(check_error);
@@ -39,33 +37,22 @@ pub fn use_field(
 
     run_checks(&value.get_untracked());
 
-    let on_change = move |v: String| {
+    create_effect(move |_| {
+        let v = value.get();
+
         if run_checks(&v) {
             if error.get_untracked().is_some() {
-                error_counter.update(|v| *v = *v - 1);
+                error_counter.update(|v| *v -= 1);
             }
 
             error.set(None);
         }
-
-        value.set(v);
-    };
-
-    create_effect(move |_| {
-        log!(
-            "error: {}",
-            match error.get() {
-                Some(e) => e,
-                None => "None".to_owned(),
-            }
-        );
     });
 
     UseField {
         value,
         required,
         error,
-        on_change: Box::new(on_change),
     }
 }
 

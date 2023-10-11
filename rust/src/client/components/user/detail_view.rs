@@ -1,6 +1,6 @@
 use crate::client::components::{Check, Field, Form, Props};
 use crate::client::states::user::{UserPageState, UserPageView};
-use crate::models::{ChangesetUser, NewUserProps};
+use crate::models::{NewUserProps, UpdateUser};
 use crate::server::user::{create_user, delete_user, update_user};
 use leptos::ev::MouseEvent;
 use leptos::*;
@@ -12,8 +12,8 @@ pub struct EditableUser {
     pub last_name: RwSignal<String>,
     pub gender: RwSignal<String>,
     pub education: RwSignal<String>,
-    // pub birth_date: RwSignal<String>,
-    // pub valid: RwSignal<String>,
+    pub birth_date: RwSignal<String>,
+    pub valid: RwSignal<String>,
 }
 
 impl Default for EditableUser {
@@ -25,8 +25,8 @@ impl Default for EditableUser {
             last_name: RwSignal::new("".to_string()),
             gender: RwSignal::new("".to_string()),
             education: RwSignal::new("".to_string()),
-            // birth_date: RwSignal::new("".to_string()),
-            // valid: RwSignal::new("".to_string()),
+            birth_date: RwSignal::new("".to_string()),
+            valid: RwSignal::new("".to_string()),
         }
     }
 }
@@ -60,11 +60,11 @@ pub fn DetailView(kind: Kind) -> impl IntoView {
                 last_name: RwSignal::new(indexed_user.last_name.clone().unwrap_or("".to_string())),
                 gender: RwSignal::new(indexed_user.gender.clone().unwrap_or("".to_string())),
                 education: RwSignal::new(indexed_user.education.clone().unwrap_or("".to_string())),
-                // birth_date: RwSignal::new(match indexed_user.birth_date {
-                //     Some(birth_date) => birth_date.to_string(),
-                //     None => "".to_string(),
-                // }),
-                // valid: RwSignal::new(indexed_user.valid.unwrap_or(false).to_string()),
+                birth_date: RwSignal::new(match indexed_user.birth_date {
+                    Some(birth_date) => birth_date.to_string(),
+                    None => "".to_string(),
+                }),
+                valid: RwSignal::new(indexed_user.valid.unwrap_or(false).to_string()),
             }
         }
         _ => EditableUser::default(),
@@ -79,14 +79,14 @@ pub fn DetailView(kind: Kind) -> impl IntoView {
                     last_name: user.last_name.get_untracked(),
                     gender: user.gender.get_untracked(),
                     education: user.education.get_untracked(),
-                    // birth_date: user.birth_date.get_untracked(),
+                    birth_date: user.birth_date.get_untracked(),
                 })
                 .await
                 .expect("Couldn't create user");
             } else {
                 update_user(
                     user.id.get_untracked(),
-                    ChangesetUser {
+                    UpdateUser {
                         email: match user.email.get_untracked() {
                             email if email.is_empty() => None,
                             email => Some(email),
@@ -107,12 +107,14 @@ pub fn DetailView(kind: Kind) -> impl IntoView {
                             education if education.is_empty() => None,
                             education => Some(education),
                         },
-                        // birth_date: user.birth_date.get_untracked(),
-                        // valid: match user.valid.get_untracked().as_str() {
-                        //     "true" => Some(true),
-                        //     "false" => Some(false),
-                        //     _ => None,
-                        // },
+                        birth_date: match user.birth_date.get_untracked() {
+                            birth_date if birth_date.is_empty() => None,
+                            birth_date => Some(birth_date),
+                        },
+                        valid: match user.valid.get_untracked() {
+                            valid if valid.is_empty() => None,
+                            valid => Some(valid),
+                        },
                     },
                 )
                 .await
@@ -143,12 +145,12 @@ pub fn DetailView(kind: Kind) -> impl IntoView {
              </h1>
 
             <Show when=move || !is_add>
-             <button
-                 class="rounded-md bg-slate-200 text-black px-3 py-1 mr-2"
-                 on:click=delete
-             >
-                Delete
-             </button>
+                 <button
+                     class="rounded-md bg-slate-200 text-black px-3 py-1 mr-2"
+                     on:click=delete
+                 >
+                    Delete
+                 </button>
             </Show>
 
              <button
@@ -159,7 +161,7 @@ pub fn DetailView(kind: Kind) -> impl IntoView {
              </button>
 
              <button
-                 class="rounded-md bg-sky-500 text-white px-3 py-1 ml-2"
+                 class="rounded-md bg-sky-500 text-white px-3 py-1 ml-2 disabled:opacity-50"
                  on:click=save
                  disabled=move || (error_counter.get() > 0)
              >
@@ -211,6 +213,21 @@ pub fn DetailView(kind: Kind) -> impl IntoView {
                         Props {
                             label: "Education",
                             value: user.education,
+                            checks: vec![],
+                        },
+                    ),
+                    Field::Date(
+                        (1900, 2023),
+                        Props {
+                            label: "Birth date",
+                            value: user.birth_date,
+                            checks: vec![],
+                        },
+                    ),
+                    Field::Checkbox(
+                        Props {
+                            label: "Valid",
+                            value: user.valid,
                             checks: vec![],
                         },
                     ),

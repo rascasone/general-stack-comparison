@@ -15,7 +15,7 @@ pub fn Input(kind: &'static str, error_counter: RwSignal<usize>, props: Props) -
                 class="w-[300px] py-2 px-4 border border-slate-200 rounded-md"
                 type=kind
                 prop:value=field.value
-                on:input=move |ev| (field.on_change)(event_target_value(&ev))
+                on:input=move |ev| field.value.set(event_target_value(&ev))
                 required=field.required
             />
 
